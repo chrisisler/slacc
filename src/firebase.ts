@@ -1,16 +1,15 @@
-import firebase from 'firebase/app';
+import * as firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
-import 'firebase/provider';
 
 const app = firebase.initializeApp({
-  apiKey: 'AIzaSyCE8Bl996F4DTUIXq2d25a5QgsMqazuT7g',
-  authDomain: 'firegram-62656.firebaseapp.com',
-  databaseURL: 'https://firegram-62656.firebaseio.com',
-  projectId: 'firegram-62656',
-  storageBucket: 'firegram-62656.appspot.com',
-  messagingSenderId: '370835404388',
-  appId: '1:370835404388:web:94b86fa21b30c12b655171',
+  apiKey: 'AIzaSyDXPxvO2bTyonaj0T-iTabnFg_b6wnA9sg',
+  authDomain: 'slacc1.firebaseapp.com',
+  databaseURL: 'https://slacc1.firebaseio.com',
+  projectId: 'slacc1',
+  storageBucket: 'slacc1.appspot.com',
+  messagingSenderId: '270415470843',
+  appId: '1:270415470843:web:81bc55c923c570a658105e',
 });
 
 // Must be in this order

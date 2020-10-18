@@ -1,7 +1,10 @@
 import styled from 'styled-components';
 
-/** The Slack theme background color. */
-export const slackColor = '#3f0f40';
+export enum Color {
+  background = '#3f0f40',
+  backgroundAccent = '#49274b',
+  backgroundDarker = '#340e36',
+}
 
 export enum Pad {
   None = '0',

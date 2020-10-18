@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { Avatar } from '@material-ui/core';
 import { AccessTime, Search, HelpOutline } from '@material-ui/icons';
 
-import { Rows, slackColor, Pad } from './style';
+import { Rows, Color, Pad } from './style';
 
 const Container = styled(Rows).attrs(() => ({
   between: true,
@@ -11,18 +11,18 @@ const Container = styled(Rows).attrs(() => ({
 }))`
   width: 100%;
   padding: ${Pad.Small} ${Pad.Medium};
-  background-color: ${slackColor};
+  background-color: ${Color.background};
   color: white;
 `;
 
-const HeaderLeft = styled(Rows).attrs(() => ({
+const LeftSection = styled(Rows).attrs(() => ({
   center: true,
   pad: Pad.Large,
 }))`
   flex: 0.3;
 `;
 
-const HeaderRight = styled(HeaderLeft)`
+const RightSide = styled(LeftSection)`
   justify-content: flex-end;
 `;
 
@@ -52,18 +52,18 @@ const SearchInput = styled.input.attrs(() => ({
 export const Header: FC = () => {
   return (
     <Container>
-      <HeaderLeft>
+      <LeftSection>
         <LeftAvatar />
         <AccessTime />
-      </HeaderLeft>
+      </LeftSection>
       <SearchContainer>
         <Search />
         <SearchInput placeholder="Search Channel Name" />
       </SearchContainer>
-      <HeaderRight>
+      <RightSide>
         <HelpOutline />
         <RightAvatar />
-      </HeaderRight>
+      </RightSide>
     </Container>
   );
 };
