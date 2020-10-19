@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC, useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import {
   InsertComment,
@@ -14,57 +14,85 @@ import {
   ExpandMore,
   Add,
 } from '@material-ui/icons';
+import { Grid } from '@material-ui/core';
+import { useHistory } from 'react-router-dom';
 
 import { Color, Columns, Rows, Pad } from './style';
 import { DataState, DataStateView } from './DataState';
 import { Channel } from './interfaces';
-import { db } from './firebase';
+import { db, DbPath, DbWrite } from './firebase';
 
 const SidebarContainer = styled(Columns)`
   color: #fff;
   background-color: ${Color.background};
   max-width: 260px;
+  width: 30%;
+  height: 100vh;
+  overflow-y: scroll;
 `;
 
-const Header = styled(Rows)`
+const SidebarHeader = styled(Rows)`
   padding: ${Pad.Small} ${Pad.Medium};
 `;
 
 const Divider = styled.hr`
   margin: ${Pad.Small} 0;
-  border-top: 1px solid ${Color.backgroundAccent};
+  border: 0;
+  border-top: 2px solid ${Color.backgroundAccent};
 `;
 
 export const Sidebar: FC = () => {
-  /** The state of the chat rooms users may join, from Firebase. */
   const [channels, setChannels] = useState<DataState<Channel[]>>(
     DataState.Loading
   );
 
-  // Get a snapshot of the app's main DB data and listen for updates
+  const history = useHistory();
+
+  const createChannel = useCallback(() => {
+    const newChannel = prompt('What is the channel name?', 'coffee');
+    if (newChannel && newChannel.length > 1) {
+      DbWrite.channels({
+        name: newChannel,
+        messages: [],
+      })
+        .catch(() => {
+          // TODO warn
+        })
+        .then(doc => {
+          if (!doc) return; // TODO warn
+          history.push(`/channel/${doc.id}`);
+        });
+    }
+  }, [history]);
+
+  const toggleChannelsView = useCallback(() => {
+    // Unimplemented
+  }, []);
+
   useEffect(() => {
-    return db.collection('channels').onSnapshot(
-      ({ docs }) => {
-        const state = docs.map(doc => ({
-          id: doc.id,
-          name: doc.data().name,
-        }));
-        setChannels(state);
-      },
-      error => setChannels(DataState.error(error.message))
-    );
+    return db
+      .collection(DbPath.Channels)
+      .orderBy('name', 'asc')
+      .onSnapshot(
+        ({ docs }) => {
+          setChannels(
+            docs.map(doc => ({ ...doc.data(), id: doc.id } as Channel))
+          );
+        },
+        error => setChannels(DataState.error(error.message))
+      );
   }, []);
 
   return (
-    <SidebarContainer pad={Pad.Medium}>
+    <SidebarContainer>
       <Divider />
-      <Header between>
+      <SidebarHeader between>
         <Columns>
           <h2>Channel Name</h2>
           <h5>Chris Isler</h5>
         </Columns>
         <Create />
-      </Header>
+      </SidebarHeader>
       <Divider />
       <SidebarOption Icon={InsertComment} title="Insert Comment" />
       <SidebarOption Icon={Inbox} title="Mentions & Reactions" />
@@ -75,9 +103,18 @@ export const Sidebar: FC = () => {
       <SidebarOption Icon={FileCopy} title="File Browser" />
       <SidebarOption Icon={ExpandLess} title="Show Less" />
       <Divider />
-      <SidebarOption Icon={ExpandMore} title="Channels" />
-      <Divider />
-      <SidebarOption Icon={Add} title="Add Channel" />
+      <Grid container>
+        <Grid item xs={8}>
+          <SidebarOption
+            Icon={ExpandMore}
+            title="Channels"
+            onClick={toggleChannelsView}
+          />
+        </Grid>
+        <Grid item xs={4}>
+          <SidebarOption Icon={Add} title="New" onClick={createChannel} />
+        </Grid>
+      </Grid>
       <DataStateView
         data={channels}
         error={() => (
@@ -94,7 +131,11 @@ export const Sidebar: FC = () => {
         {channels => (
           <>
             {channels.map(channel => (
-              <SidebarOption key={channel.name} title={channel.name} />
+              <SidebarOption
+                key={channel.id}
+                channelId={channel.id}
+                title={channel.name}
+              />
             ))}
           </>
         )}
@@ -106,9 +147,8 @@ export const Sidebar: FC = () => {
 // SidebarOption
 
 const SidebarOptionContainer = styled(Rows)`
-  align-items: center;
   font-size: 0.9em;
-  padding-left: ${Pad.Medium};
+  padding: ${Pad.Medium} ${Pad.Medium};
   cursor: pointer;
 
   &:hover {
@@ -120,14 +160,34 @@ const SidebarHash = styled.span`
   padding: 0 0.175rem;
 `;
 
-const SidebarOption: FC<{ Icon?: SvgIconComponent; title: string }> = ({
-  Icon,
-  title,
-}) => {
+// TODO Keyboard accessibility
+const SidebarOption: FC<{
+  // TODO Separate SidebarOption from SidebarChannelOption (also less vertical
+  // padding for channels). This will make Icon? and channelId? non-void.
+  Icon?: SvgIconComponent;
+  title: string;
+  channelId?: string;
+  onClick?: () => void;
+}> = ({ Icon, title, channelId, onClick }) => {
+  const history = useHistory();
+  const joinChannel = () => {
+    if (channelId) {
+      history.push(`/channel/${channelId}`);
+    } else {
+      history.push(title);
+    }
+  };
   return (
-    <SidebarOptionContainer pad={Pad.Small}>
-      {Icon && <Icon style={{ fontSize: '15px' }} />}
-      {!Icon && <SidebarHash>#</SidebarHash>}
+    <SidebarOptionContainer
+      pad={Pad.Small}
+      center
+      onClick={onClick ?? joinChannel}
+    >
+      {Icon ? (
+        <Icon style={{ fontSize: '15px' }} />
+      ) : (
+        <SidebarHash>#</SidebarHash>
+      )}
       <h4>{title}</h4>
     </SidebarOptionContainer>
   );
