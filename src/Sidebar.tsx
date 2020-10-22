@@ -20,7 +20,7 @@ import { useHistory } from 'react-router-dom';
 import { Color, Columns, Rows, Pad } from './style';
 import { DataState, DataStateView } from './DataState';
 import { Channel } from './interfaces';
-import { db, DbPath, DbWrite } from './firebase';
+import { db, DbPath } from './firebase';
 
 const SidebarContainer = styled(Columns)`
   color: #fff;
@@ -51,10 +51,12 @@ export const Sidebar: FC = () => {
   const createChannel = useCallback(() => {
     const newChannel = prompt('What is the channel name?', 'coffee');
     if (newChannel && newChannel.length > 1) {
-      DbWrite.channels({
+      const entry: Omit<Channel, 'id'> = {
         name: newChannel,
         messages: [],
-      })
+      };
+      db.collection(DbPath.Channels)
+        .add(entry)
         .catch(() => {
           // TODO warn
         })
@@ -131,7 +133,7 @@ export const Sidebar: FC = () => {
         {channels => (
           <>
             {channels.map(channel => (
-              <SidebarOption
+              <SidebarChannelOption
                 key={channel.id}
                 channelId={channel.id}
                 title={channel.name}
@@ -146,7 +148,10 @@ export const Sidebar: FC = () => {
 
 // SidebarOption
 
-const SidebarOptionContainer = styled(Rows)`
+const SidebarOptionContainer = styled(Rows).attrs(() => ({
+  pad: Pad.Small,
+  center: true,
+}))`
   font-size: 0.9em;
   padding: ${Pad.Medium} ${Pad.Medium};
   cursor: pointer;
@@ -160,15 +165,10 @@ const SidebarHash = styled.span`
   padding: 0 0.175rem;
 `;
 
-// TODO Keyboard accessibility
-const SidebarOption: FC<{
-  // TODO Separate SidebarOption from SidebarChannelOption (also less vertical
-  // padding for channels). This will make Icon? and channelId? non-void.
-  Icon?: SvgIconComponent;
+const SidebarChannelOption: FC<{
   title: string;
-  channelId?: string;
-  onClick?: () => void;
-}> = ({ Icon, title, channelId, onClick }) => {
+  channelId: string;
+}> = ({ title, channelId }) => {
   const history = useHistory();
   const joinChannel = () => {
     if (channelId) {
@@ -178,16 +178,23 @@ const SidebarOption: FC<{
     }
   };
   return (
-    <SidebarOptionContainer
-      pad={Pad.Small}
-      center
-      onClick={onClick ?? joinChannel}
-    >
-      {Icon ? (
-        <Icon style={{ fontSize: '15px' }} />
-      ) : (
-        <SidebarHash>#</SidebarHash>
-      )}
+    <SidebarOptionContainer onClick={joinChannel}>
+      <SidebarHash>#</SidebarHash>
+      <h4>{title}</h4>
+    </SidebarOptionContainer>
+  );
+};
+
+const SidebarOption: FC<{
+  Icon: SvgIconComponent;
+  title: string;
+  onClick?: () => void;
+}> = ({ Icon, title, onClick }) => {
+  const history = useHistory();
+  const joinChannel = useCallback(() => history.push(title), [history, title]);
+  return (
+    <SidebarOptionContainer onClick={onClick ?? joinChannel}>
+      <Icon style={{ fontSize: '15px' }} />
       <h4>{title}</h4>
     </SidebarOptionContainer>
   );

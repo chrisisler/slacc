@@ -28,7 +28,7 @@ export const DataState = {
   isError: <T extends unknown>(ds: DataState<T>): ds is Error => {
     return ds instanceof Error;
   },
-  isReady: <T extends unknown>(ds: DataState<T>): ds is T => {
+  exists: <T extends unknown>(ds: DataState<T>): ds is T => {
     return (
       !DataState.isError(ds) &&
       !DataState.isLoading(ds) &&

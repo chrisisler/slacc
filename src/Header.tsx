@@ -58,7 +58,7 @@ export const Header: FC = () => {
       </LeftSection>
       <SearchContainer>
         <Search />
-        <SearchInput placeholder="Search Channel Name" />
+        <SearchInput placeholder="Search" />
       </SearchContainer>
       <RightSide>
         <HelpOutline />
