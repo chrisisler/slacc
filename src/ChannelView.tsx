@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState, useCallback } from 'react';
+import React, { FC, useEffect, useState, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { useParams, useHistory } from 'react-router-dom';
 import {
@@ -63,6 +63,8 @@ const ChannelMessagesContainer = styled(Columns)`
  * Allows users to read and send messages with other users in the channel.
  */
 export const ChannelView: FC = () => {
+  const messagesRef = useRef<HTMLDivElement>(null);
+
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<DataState<Message[]>>(
     DataState.Empty
@@ -85,6 +87,7 @@ export const ChannelView: FC = () => {
   const sendMessage = useCallback(
     <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
+      setMessage('');
       if (!user?.displayName) return;
       const entry: Omit<Message, 'id'> = {
         content: message,
@@ -100,7 +103,9 @@ export const ChannelView: FC = () => {
           setMessage('Something went wrong.');
         })
         .then(() => {
-          setMessage('');
+          if (messagesRef.current) {
+            messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+          }
         });
     },
     [channelId, message, user]
@@ -173,7 +178,7 @@ export const ChannelView: FC = () => {
         )}
       >
         {messages => (
-          <ChannelMessagesContainer pad={Pad.XSmall}>
+          <ChannelMessagesContainer pad={Pad.XSmall} ref={messagesRef}>
             {messages.map(m => (
               <MessageView message={m} key={m.id} />
             ))}

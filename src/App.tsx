@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { ChannelView } from './ChannelView';
-import { Rows, Columns } from './style';
+import { Rows } from './style';
 import { Login } from './Login';
 import { useUser } from './useUser';
 

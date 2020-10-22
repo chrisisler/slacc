@@ -71,7 +71,7 @@ export const MessageView: FC<{ message: Message }> = ({
       .catch(() => {
         // TODO
       });
-  }, [channelId, id]);
+  }, [channelId, id, content]);
 
   if (!user?.displayName) return null;
 
