@@ -44,3 +44,12 @@ export const Rows = styled(Div)`
     margin-right: ${(props: { pad?: Pad }) => props?.pad ?? Pad.None};
   }
 `;
+
+export const UserImage = styled.img`
+  border-radius: 5px;
+  object-fit: contain;
+  height: ${(props: { size?: number }) =>
+    props.size ? `${props.size}px` : '50px'};
+  width: ${(props: { size?: number }) =>
+    props.size ? `${props.size}px` : '50px'};
+`;

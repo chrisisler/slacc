@@ -1,26 +1,38 @@
-import React, { FC, useState } from 'react';
+import React, { FC } from 'react';
 import styled from 'styled-components';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { ChannelView } from './ChannelView';
-import { Rows } from './style';
+import { Rows, Columns } from './style';
 import { Login } from './Login';
+import { useUser } from './useUser';
 
-const Body = styled(Rows)`
+const AppContainer = styled.div`
   height: 100%;
 `;
 
+const Body = styled(Rows)`
+  height: calc(100% - 64px);
+`;
+
+const SelectChannel = styled.div`
+  height: 100%;
+  width: 100%;
+  display: grid;
+  place-items: center;
+`;
+
 export const App: FC = () => {
-  const [user, setUser] = useState(null);
+  const [user] = useUser();
   return (
     <>
       <Router>
         {!user ? (
           <Login />
         ) : (
-          <>
+          <AppContainer>
             <Header />
             <Body>
               <Sidebar />
@@ -29,11 +41,13 @@ export const App: FC = () => {
                   <ChannelView />
                 </Route>
                 <Route path="/">
-                  <h1>Dummy route</h1>
+                  <SelectChannel>
+                    <h3>Join a channel to chat!</h3>
+                  </SelectChannel>
                 </Route>
               </Switch>
             </Body>
-          </>
+          </AppContainer>
         )}
       </Router>
     </>

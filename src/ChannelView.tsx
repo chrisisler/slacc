@@ -1,20 +1,24 @@
 import React, { FC, useEffect, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import { useParams, useHistory } from 'react-router-dom';
-import { StarBorderOutlined } from '@material-ui/icons';
+import {
+  StarBorderOutlined,
+  InfoOutlined,
+  DeleteOutlined,
+} from '@material-ui/icons';
 import { firestore } from 'firebase/app';
-import { CircularProgress, Button } from '@material-ui/core';
+import { CircularProgress, Button, IconButton } from '@material-ui/core';
 
-import { Pad, Rows, Color, Columns } from './style';
+import { Pad, Rows, Columns } from './style';
 import { db, DbPath } from './firebase';
 import { useDataState, DataStateView, DataState } from './DataState';
 import { Channel, RouteParams, Message } from './interfaces';
 import { MessageView } from './MessageView';
+import { useUser } from './useUser';
 
 const ChannelViewContainer = styled(Columns)`
-  height: 100vh;
+  height: 100%;
   width: 100%;
-  overflow-y: hidden;
 `;
 
 const ChannelHeader = styled(Rows).attrs(() => ({
@@ -22,7 +26,7 @@ const ChannelHeader = styled(Rows).attrs(() => ({
   between: true,
 }))`
   padding: ${Pad.Medium};
-  border-bottom: 1px solid ${Color.backgroundAccent};
+  border-bottom: 1px solid lightgray;
 `;
 
 const ChannelTitle = styled.h4`
@@ -32,20 +36,25 @@ const ChannelTitle = styled.h4`
 const MessageInputContainer = styled(Rows)`
   margin-top: auto;
   width: 100%;
+  padding: ${Pad.Medium};
 `;
 
 const MessageInput = styled.input`
   font-size: 1em;
   padding: ${Pad.Medium};
-  border: 2px solid lightgray;
-  border-radius: 5px;
+  border: 1px solid lightgray;
+  border-radius: 0 5px 5px 0;
   width: 100%;
-  margin: ${Pad.Medium};
 `;
 
-const ChannelMessagesContainer = styled(Columns).attrs(() => ({
-  pad: Pad.Medium,
-}))`
+const MessageSendButton = styled(Button)`
+  border: 1px solid lightgray !important;
+  border-radius: 5px 0 0 5px !important;
+  border-right: 0 !important;
+  font-size: 1.2em !important;
+`;
+
+const ChannelMessagesContainer = styled(Columns)`
   overflow-y: scroll;
 `;
 
@@ -59,6 +68,7 @@ export const ChannelView: FC = () => {
     DataState.Empty
   );
 
+  const [user] = useUser();
   const { channelId } = useParams<RouteParams>();
   const history = useHistory();
 
@@ -75,10 +85,11 @@ export const ChannelView: FC = () => {
   const sendMessage = useCallback(
     <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
+      if (!user?.displayName) return;
       const entry: Omit<Message, 'id'> = {
         content: message,
-        // TODO auth
-        username: 'fake username',
+        username: user.displayName,
+        userImage: user.photoURL,
         timestamp: firestore.FieldValue.serverTimestamp(),
       };
       db.collection(DbPath.Channels)
@@ -86,14 +97,28 @@ export const ChannelView: FC = () => {
         .collection(DbPath.Messages)
         .add(entry)
         .catch(() => {
-          // TODO
+          setMessage('Something went wrong.');
         })
         .then(() => {
           setMessage('');
         });
     },
-    [channelId, message]
+    [channelId, message, user]
   );
+
+  const deleteChannel = useCallback(() => {
+    if (!DataState.exists(channel) || !channel) return;
+    if (!window.confirm(`Delete channel #${channel.name}?`)) return;
+    db.collection(DbPath.Channels)
+      .doc(channelId)
+      .delete()
+      .catch(() => {
+        // TODO
+      })
+      .then(() => {
+        history.push('/');
+      });
+  }, [channelId, channel, history]);
 
   useEffect(() => {
     if (DataState.exists(channel) && !channel) history.push('/');
@@ -116,10 +141,10 @@ export const ChannelView: FC = () => {
       );
   }, [channelId]);
 
-  if (!channel) return null;
+  if (!user || !channel) return null;
 
   return (
-    <ChannelViewContainer>
+    <ChannelViewContainer pad={Pad.Medium}>
       <ChannelHeader>
         <Rows pad={Pad.Small} center>
           <DataStateView
@@ -127,20 +152,20 @@ export const ChannelView: FC = () => {
             loading={() => <ChannelTitle># ...</ChannelTitle>}
             error={() => <ChannelTitle># Something went wrong!</ChannelTitle>}
           >
-            {channel => <ChannelTitle># {channel.name}</ChannelTitle>}
+            {channel => <ChannelTitle>#{channel.name}</ChannelTitle>}
           </DataStateView>
           <StarBorderOutlined />
         </Rows>
-        <div>Details</div>
-        {/** Details: Num users in channel, channel description */}
+        <Rows pad={Pad.Small} center>
+          <InfoOutlined />
+          <IconButton aria-label="delete" onClick={deleteChannel} size="small">
+            <DeleteOutlined />
+          </IconButton>
+        </Rows>
       </ChannelHeader>
       <DataStateView
         data={messages}
-        loading={() => (
-          <Columns center>
-            <CircularProgress title="Working on it..." />
-          </Columns>
-        )}
+        loading={() => null}
         error={() => (
           <Columns center>
             <CircularProgress title="Could not load messages!" />
@@ -148,7 +173,7 @@ export const ChannelView: FC = () => {
         )}
       >
         {messages => (
-          <ChannelMessagesContainer>
+          <ChannelMessagesContainer pad={Pad.XSmall}>
             {messages.map(m => (
               <MessageView message={m} key={m.id} />
             ))}
@@ -156,14 +181,21 @@ export const ChannelView: FC = () => {
         )}
       </DataStateView>
       <MessageInputContainer as="form" onSubmit={sendMessage}>
+        <MessageSendButton
+          onClick={sendMessage}
+          disabled={message.length === 0}
+        >
+          +
+        </MessageSendButton>
         <MessageInput
           value={message}
           onChange={event => setMessage(event.target.value)}
           placeholder={
-            DataState.exists(channel) ? `Message #${channel.name}` : 'Message'
+            DataState.exists(channel)
+              ? `Message #${channel.name?.toLowerCase()}`
+              : 'Message'
           }
         />
-        {message.length > 0 && <Button onClick={sendMessage}>SEND</Button>}
       </MessageInputContainer>
     </ChannelViewContainer>
   );

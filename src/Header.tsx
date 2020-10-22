@@ -1,9 +1,16 @@
 import React, { FC } from 'react';
 import styled from 'styled-components';
-import { Avatar } from '@material-ui/core';
-import { AccessTime, Search, HelpOutline } from '@material-ui/icons';
+import {
+  AccessTime,
+  Search,
+  HelpOutline,
+  HighlightOff,
+} from '@material-ui/icons';
 
-import { Rows, Color, Pad } from './style';
+import { Rows, Color, Pad, UserImage } from './style';
+import { useUser } from './useUser';
+import { IconButton } from '@material-ui/core';
+import { auth } from './firebase';
 
 const Container = styled(Rows).attrs(() => ({
   between: true,
@@ -26,10 +33,6 @@ const RightSide = styled(LeftSection)`
   justify-content: flex-end;
 `;
 
-const LeftAvatar = styled(Avatar)``;
-
-const RightAvatar = styled(Avatar)``;
-
 const SearchContainer = styled(Rows)`
   flex: 0.4;
   text-align: center;
@@ -50,19 +53,33 @@ const SearchInput = styled.input.attrs(() => ({
 `;
 
 export const Header: FC = () => {
+  const [user] = useUser();
+
+  if (!user) return null;
+
   return (
     <Container>
       <LeftSection>
-        <LeftAvatar />
-        <AccessTime />
+        <UserImage
+          size={35}
+          src={user.photoURL ?? undefined}
+          alt={user.displayName ?? undefined}
+        />
       </LeftSection>
-      <SearchContainer>
-        <Search />
-        <SearchInput placeholder="Search" />
-      </SearchContainer>
+      <Rows pad={Pad.Medium}>
+        <AccessTime />
+        <SearchContainer>
+          <Search />
+          <SearchInput placeholder="Search Channels" />
+        </SearchContainer>
+      </Rows>
       <RightSide>
-        <HelpOutline />
-        <RightAvatar />
+        <Rows pad={Pad.Small} center>
+          <HelpOutline />
+          <IconButton onClick={() => auth.signOut()}>
+            <HighlightOff style={{ color: 'white' }} />
+          </IconButton>
+        </Rows>
       </RightSide>
     </Container>
   );

@@ -1,18 +1,16 @@
 import React, { FC, useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import {
-  InsertComment,
   SvgIconComponent,
   Inbox,
   Drafts,
   BookmarkBorder,
   PeopleAlt,
-  Apps,
-  FileCopy,
   ExpandLess,
   Create,
   ExpandMore,
   Add,
+  FiberManualRecord,
 } from '@material-ui/icons';
 import { Grid } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
@@ -21,13 +19,14 @@ import { Color, Columns, Rows, Pad } from './style';
 import { DataState, DataStateView } from './DataState';
 import { Channel } from './interfaces';
 import { db, DbPath } from './firebase';
+import { useUser } from './useUser';
 
 const SidebarContainer = styled(Columns)`
   color: #fff;
   background-color: ${Color.background};
   max-width: 260px;
   width: 30%;
-  height: 100vh;
+  height: 100%;
   overflow-y: scroll;
 `;
 
@@ -36,9 +35,9 @@ const SidebarHeader = styled(Rows)`
 `;
 
 const Divider = styled.hr`
-  margin: ${Pad.Small} 0;
+  margin: ${Pad.Medium} 0 !important;
   border: 0;
-  border-top: 2px solid ${Color.backgroundAccent};
+  border-top: 1px solid ${Color.backgroundAccent};
 `;
 
 export const Sidebar: FC = () => {
@@ -46,6 +45,7 @@ export const Sidebar: FC = () => {
     DataState.Loading
   );
 
+  const [user] = useUser();
   const history = useHistory();
 
   const createChannel = useCallback(() => {
@@ -85,24 +85,26 @@ export const Sidebar: FC = () => {
       );
   }, []);
 
+  if (!user) return null;
+
   return (
     <SidebarContainer>
       <Divider />
       <SidebarHeader between>
         <Columns>
-          <h2>Channel Name</h2>
-          <h5>Chris Isler</h5>
+          <h2>Slacc</h2>
+          <Rows center pad={Pad.XSmall}>
+            <FiberManualRecord style={{ color: 'green' }} />
+            <h5>{user.displayName}</h5>
+          </Rows>
         </Columns>
         <Create />
       </SidebarHeader>
       <Divider />
-      <SidebarOption Icon={InsertComment} title="Insert Comment" />
       <SidebarOption Icon={Inbox} title="Mentions & Reactions" />
       <SidebarOption Icon={Drafts} title="Saved" />
       <SidebarOption Icon={BookmarkBorder} title="Channel Browser" />
       <SidebarOption Icon={PeopleAlt} title="People" />
-      <SidebarOption Icon={Apps} title="Apps" />
-      <SidebarOption Icon={FileCopy} title="File Browser" />
       <SidebarOption Icon={ExpandLess} title="Show Less" />
       <Divider />
       <Grid container>
@@ -153,7 +155,7 @@ const SidebarOptionContainer = styled(Rows).attrs(() => ({
   center: true,
 }))`
   font-size: 0.9em;
-  padding: ${Pad.Medium} ${Pad.Medium};
+  padding: ${Pad.Small} ${Pad.Medium};
   cursor: pointer;
 
   &:hover {
